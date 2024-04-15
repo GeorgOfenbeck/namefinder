@@ -5,37 +5,75 @@ import scala.io.Source
 import com.github.tototoshi.csv._
 import java.io.File
 
-object Hello extends App {
+import os._
+import com.ofenbeck.Namefinder.NameStats
 
-  def msg = "Hello World!"
+object Namefinder extends App {
 
-  println(msg)
+  val csvFilePath = os.read.inputStream(os.resource / "ts-x-01.04.00.10.csv")
+  val reader = CSVReader.open(new java.io.InputStreamReader(csvFilePath))
 
-  val csvFilePath = "/Users/taaofge1/code/PoCs/namefinder/ts-x-01.04.00.10.csv"
-
-  /*
-  //read the file into a string
-  val source = scala.io.Source.fromFile(csvFilePath)
-  val it = source.getLines()
-  it.next() // skip the header
-  val lines = it.toList.mkString("\n")
-  source.close()
-  val csvLines = ru.johnspade.csv3s.parser.parseComplete(lines)
-  if (csvLines.isLeft) {
-    println(s"Error parsing CSV file: ${csvLines.left.get}")
-    System.exit(1)
+  val classed = csvToClass(reader)
+  case class NameStats(
+      name: String,
+      total: Int,
+      last10years: Int,
+      syllables: Int,
+      lastYear: Int
+  ) {
+    override def toString() =
+      s"$name: $syllables, $total, ${last10years / 10}, $lastYear"
   }
-  val decodet = csvLines.map(parsed => {
-     val decoded = parsed.rows.rows.map( rows => FemaleName.decoder.decode(rows))
-     val working = decoded.flatMap( x => x.toOption)
-     working
-  })
-  decodet.foreach(println)
-   */
-  val reader = CSVReader.open(new File(csvFilePath))
+  val mapped = classed
+    .groupBy(_.name)
+    .map((name, femname) =>
+      val total = femname.map(_.value).sum
+      val last10years = femname.filter(_.yearOfBirth > 2010).map(_.value).sum
+      val lastYear = femname.filter(_.yearOfBirth == 2022).map(_.value).sum
+      val syllables = countSyllables(name)
+      NameStats(name, total, last10years, syllables, lastYear)
+    )
+    .toVector
+    .view
+    .filter(_.syllables <= 3)
+    .filter(_.name.length() < 8)
+    .filter(_.name.forall(ch => ch.isLetter && ch <= 127))
+    .filter(x => !x.name.toLowerCase().contains("t"))
+    .toVector
+    // .filter(_.total > 50)
+    // sortBy(_.total) { Ordering[Int].reverse }
+    .sortBy(_.lastYear)(Ordering[Int].reverse)
+    .drop(200)
+    .take(10)
+  println(s"Down to ${mapped.length}")
+  mapped.foreach(x => println(x))
 
+  plotNameDist(mapped)
+  // classed.foreach(println)
+// decodet.foreach(println)
+
+  // Process the CSV lines here
+
+}
+
+def plotNameDist(names: Vector[NameStats]): Unit = {
+  import org.nspl._
+  import org.nspl.data.HistogramData
+  import org.nspl.awtrenderer._
+  val hist1 = xyplot(
+    HistogramData(rotated.firstCol("PC1").toVec.toSeq, 10) -> bar()
+  )(
+    par
+      .xlab("PC1")
+      .ylab("freq.")
+      .main("Loading distribution")
+      .ylim(Some(0d -> Double.NaN))
+  )
+  pngToByteArray(hist1.build, width = 2000)
+}
+
+def csvToClass(reader: CSVReader): List[FemaleName] = {
   val withHeader = reader.allWithHeaders()
-  withHeader.head.keySet.foreach(println)
   val classed = withHeader.map { row =>
     // print(row.keySet)
     if (
@@ -47,8 +85,8 @@ object Hello extends App {
         "OBS_STATUS"
       )
     ) {
-      println("Error: CSV file does not have the expected header")
-      println(row.keySet)
+      // println("Error: CSV file does not have the expected header")
+      // println(row.keySet)
       FemaleName("", "", 0, 0, "")
     } else
       FemaleName(
@@ -59,55 +97,14 @@ object Hello extends App {
         row("OBS_STATUS")
       )
   }
-  //println( classed.length)
-  val uniqueNames = classed.map(_.name).toSet 
-  println( uniqueNames.size)
-
- case class NameStats(name: String, total: Int, last10years: Int, syllables: Int, lastYear: Int){
-  override def toString() = s"$name: $total, $last10years, $syllables, $lastYear"
- } 
-  val mapped =classed
-  .groupBy(_.name)
-  .map( (name, femname) => 
-      val total = femname.map(_.value).sum
-      val last10years = femname.filter( _.yearOfBirth > 2010).map(_.value).sum
-      val lastYear = femname.filter( _.yearOfBirth == 2022).map(_.value).sum
-      val syllables = countSyllables(name)
-      NameStats(name, total, last10years, syllables, lastYear)
-  )
-  .toVector
-  .filter( _.syllables <= 3)
-  .filter( _.name.length() < 8)
-  .filter(_.name.forall(ch => ch.isLetter && ch <= 127))
-  .filter(_.total > 50)
-  .sortBy(_.total){Ordering[Int].reverse}
-  /*.foldLeft(Map.empty[String, NameStats]) { (result, current) =>
-    if (result.exists(x => isOneEditAway(x.str, current.str))) result
-    else current :: result
-  }*/
-  .filter(x =>  !x.name.toLowerCase().contains("t"))
-  .sortBy(_.lastYear)(Ordering[Int].reverse)
-  // .drop(1000)
-   .take(1000)
-
-  println(s"Down to ${mapped.length}")
-  mapped.foreach(x => println(x))
-  
-  
-
-
-  // classed.foreach(println)
-// decodet.foreach(println)
-
-  // Process the CSV lines here
-
+  classed
 }
 
 def countSyllables(word: String): Int = {
   val vowels = "aeiouyAEIOUY"
   val regex = "[aeiouyAEIOUY]+".r
   val syllables = regex.findAllIn(word).length
- // if (word.endsWith("e")) syllables - 1 else syllables
+  // if (word.endsWith("e")) syllables - 1 else syllables
   syllables
 }
 
