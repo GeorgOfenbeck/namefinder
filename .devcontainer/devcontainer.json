@@ -55,9 +55,9 @@
             "ghcr.io/devcontainers-contrib/features/fzf:1",
             "ghcr.io/georgofenbeck/features/thefuck-pipx:1",
         ],
-        //"mounts": [
-        //    "source=${localEnv:HOME}/.ssh/,target=/home/vscode/.ssh/,type=bind,consistency=cached",
-        //],
+        "mounts": [
+            "source=${localEnv:HOME}/.ssh/,target=/home/vscode/.ssh/,type=bind,consistency=cached",
+        ],
         //ln -s /usr/local/texlive/2022/bin/x86_64-linux/* /usr/local/bin/
         // Open the sub-folder with the source code
         //"workspaceMount": "source=GitCVVolumne,target=/workspace,type=volume",

@@ -48,7 +48,6 @@ object Namefinder extends App {
   println(s"Down to ${mapped.length}")
   mapped.foreach(x => println(x))
 
-  plotNameDist(mapped)
   // classed.foreach(println)
 // decodet.foreach(println)
 
@@ -56,21 +55,6 @@ object Namefinder extends App {
 
 }
 
-def plotNameDist(names: Vector[NameStats]): Unit = {
-  import org.nspl._
-  import org.nspl.data.HistogramData
-  import org.nspl.awtrenderer._
-  val hist1 = xyplot(
-    HistogramData(rotated.firstCol("PC1").toVec.toSeq, 10) -> bar()
-  )(
-    par
-      .xlab("PC1")
-      .ylab("freq.")
-      .main("Loading distribution")
-      .ylim(Some(0d -> Double.NaN))
-  )
-  pngToByteArray(hist1.build, width = 2000)
-}
 
 def csvToClass(reader: CSVReader): List[FemaleName] = {
   val withHeader = reader.allWithHeaders()
