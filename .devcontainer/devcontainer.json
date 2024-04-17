@@ -11,7 +11,7 @@
     // Features to add to the dev container. More info: https://containers.dev/features.
     // "features": {},
     "service": "dev-container",
-    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+    "workspaceFolder": "/workspaces/",
     "features": {
         "ghcr.io/devcontainers/features/common-utils:2": {
             "installZsh": true,
