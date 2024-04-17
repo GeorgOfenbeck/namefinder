@@ -25,8 +25,8 @@ services:
       - JUPYTER_TOKEN=my_secret_token
     networks:
       - mynetwork
-    #volumes:
-    #  - ../namefinder/resources/ts-x-01.04.00.10.csv:/home/jovyan/work/ts-x-01.04.00.10.csv:ro 
+    volumes:
+     - ../namefinder/resources/ts-x-01.04.00.10.csv:/home/jovyan/work/ts-x-01.04.00.10.csv:ro 
     # Overrides default command so things don't shut down after the process ends.
     # command: /bin/sh -c "while sleep 1000; do :; done"
 networks:
