@@ -3,12 +3,15 @@
 {
     "name": "Namefinder Container",
     // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    //"image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "dockerComposeFile": "docker-compose.yml",
     // Remove the "Dockerfile" property
 	//"build": { "dockerfile": "Dockerfile" },
     // "Dockerfile": "Dockerfile", //using a custom Dockerfile cause latex is huge and I don't want to install it every time
     // Features to add to the dev container. More info: https://containers.dev/features.
     // "features": {},
+    "service": "dev-container",
+    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
     "features": {
         "ghcr.io/devcontainers/features/common-utils:2": {
             "installZsh": true,
@@ -71,7 +74,7 @@
                     "scalameta.metals",
                     "vintharas.learn-vim",
                     "mhutchie.git-graph",
-                    "James-Yu.latex-workshop"
+                    "ms-toollsai.jupyter",
             ]
         }
     },

@@ -1,0 +1,33 @@
+version: '3.8'
+services:
+  dev-container:
+    image: mcr.microsoft.com/devcontainers/base:ubuntu
+    environment:
+      - JUPYTER_TOKEN=my_secret_token
+    volumes:
+      - ..:/workspaces:cached
+    command: /bin/sh -c "while sleep 1000; do :; done"
+    networks:
+      - mynetwork
+  almond:
+    # Uncomment if you want to override the service's Dockerfile to one in the .devcontainer 
+    # folder. Note that the path of the Dockerfile and context is relative to the *primary* 
+    # docker-compose.yml file (the first in the devcontainer.json "dockerComposeFile"
+    # array). The sample below assumes your primary file is in the root of your project.
+    #
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - ALMOND_VERSION=0.14.0-RC14
+        - SCALA_VERSIONS=2.13.12
+    environment:
+      - JUPYTER_TOKEN=my_secret_token
+    networks:
+      - mynetwork
+    #volumes:
+    #  - ../namefinder/resources/ts-x-01.04.00.10.csv:/home/jovyan/work/ts-x-01.04.00.10.csv:ro 
+    # Overrides default command so things don't shut down after the process ends.
+    # command: /bin/sh -c "while sleep 1000; do :; done"
+networks:
+  mynetwork:
