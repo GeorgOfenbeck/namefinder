@@ -9,6 +9,7 @@
     // "Dockerfile": "Dockerfile", //using a custom Dockerfile cause latex is huge and I don't want to install it every time
     // Features to add to the dev container. More info: https://containers.dev/features.
     // "features": {},
+    
 
 
     // For running jupyter also in the container
@@ -85,7 +86,7 @@
         }
     },
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
-    // "forwardPorts": [],
+     "forwardPorts": [8080],
     // Use 'postCreateCommand' to run commands after the container is created.
     // "postCreateCommand": "uname -a",
     // Configure tool-specific properties.
