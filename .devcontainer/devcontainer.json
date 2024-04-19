@@ -3,14 +3,19 @@
 {
     "name": "Namefinder Container",
     // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-    //"image": "mcr.microsoft.com/devcontainers/base:ubuntu",
-    "dockerComposeFile": "docker-compose.yml",
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
     // Remove the "Dockerfile" property
 	//"build": { "dockerfile": "Dockerfile" },
     // "Dockerfile": "Dockerfile", //using a custom Dockerfile cause latex is huge and I don't want to install it every time
     // Features to add to the dev container. More info: https://containers.dev/features.
     // "features": {},
-    "service": "dev-container",
+
+
+    // For running jupyter also in the container
+    //"dockerComposeFile": "docker-compose.yml",
+    //"service": "dev-container",
+
+
     "workspaceFolder": "/workspaces/",
     "features": {
         "ghcr.io/devcontainers/features/common-utils:2": {
@@ -75,6 +80,7 @@
                     "vintharas.learn-vim",
                     "mhutchie.git-graph",
                     "ms-toollsai.jupyter",
+                    "tomoki1207.pdf"
             ]
         }
     },
