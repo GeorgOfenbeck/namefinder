@@ -7,7 +7,7 @@ import java.io.File
 
 import os._
 import com.ofenbeck.Namefinder.NameStats
-import plotly._, plotly.element._, plotly.layout._, plotly.Almond._
+//import plotly._, plotly.element._, plotly.layout._, plotly.Almond._
 
 object Namefinder extends App {
 
@@ -52,7 +52,7 @@ object Namefinder extends App {
       (acc._1 :+ index, acc._2 :+ nameStats.lastYear)
     }
   }
-  val (xv,yv) = vecs
+  //val (xv,yv) = vecs
   //println(s"Down to ${mapped.length}")
   //mapped.foreach(x => println(x))
 
