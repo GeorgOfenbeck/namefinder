@@ -33,9 +33,15 @@ object NameFinderWS extends cask.MainRoutes {
 
   @cask.get("/init")
   def init() = {
+   val all: Vector[NameStats] = LoadCSV()
 
+   val insertAll = quote {
+      liftQuery(all).foreach(e => query[NameStats].insertValue(
+                NameStats(e.name, e.total, e.last10years, e.syllables, e.lastYear, e.ratingM, e.ratingML, e.clashProb, e.prob)))
+   }
+   ctx.run(insertAll)
     //ctx.executeAction("DROP TABLE IF EXISTS namestats;")
-   val rawSQL = quote{
+   val rawSQL = 
       """
       |CREATE TABLE IF NOT EXISTS namestats (
       |  name VARCHAR(255),
@@ -58,7 +64,6 @@ object NameFinderWS extends cask.MainRoutes {
       |  INDEX idx_prob (prob)
       |);
       |""".stripMargin
-   }
 
     doctype("html")(
       html(
