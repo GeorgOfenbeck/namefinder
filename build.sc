@@ -12,7 +12,8 @@ object namefinder extends ScalaModule {
     ivy"com.lihaoyi::cask:0.9.2",
     ivy"com.lihaoyi::scalatags:0.13.1",
     ivy"io.getquill::quill-jdbc:4.8.3",
-    ivy"org.postgresql:postgresql:42.7.3",
+    ivy"com.mysql:mysql-connector-j:8.3.0",
+    //ivy"org.postgresql:postgresql:42.7.3",
     ivy"com.opentable.components:otj-pg-embedded:0.13.1"
   )
   object test extends ScalaTests with TestModule.Munit {

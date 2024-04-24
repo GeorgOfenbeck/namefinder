@@ -1,7 +1,9 @@
 package com.ofenbeck
 
 import scalatags.Text.all._
-object MinimalApplication extends cask.MainRoutes {
+object NameFinderWS extends cask.MainRoutes {
+
+
   case class Message(name: String, msg: String)
   import io.getquill._
   import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
@@ -15,7 +17,9 @@ object MinimalApplication extends cask.MainRoutes {
   val hikariConfig = new HikariConfig()
   hikariConfig.setDataSource(mysqlDataSource)
   val ctx = new MysqlJdbcContext(LowerCase, new HikariDataSource(hikariConfig))
-  ctx.executeAction("CREATE TABLE IF NOT EXISTS message (name text, msg text);")
+  ctx.executeAction(
+    "CREATE TABLE IF NOT EXISTS namestats (name text, msg text);"
+  )
   import ctx._
 
   def messages = ctx.run(query[Message].map(m => (m.name, m.msg)))
@@ -26,6 +30,49 @@ object MinimalApplication extends cask.MainRoutes {
 
   @cask.staticResources("/static")
   def staticResourceRoutes() = "static"
+
+  @cask.get("/init")
+  def init() = {
+
+    //ctx.executeAction("DROP TABLE IF EXISTS namestats;")
+   val rawSQL = quote{
+      """
+      |CREATE TABLE IF NOT EXISTS namestats (
+      |  name VARCHAR(255),
+      |  total INT,
+      |  last10years INT,
+      |  syllables INT,
+      |  lastYear INT,
+      |  ratingM INT,
+      |  ratingML INT,
+      |  clashProb DOUBLE,
+      |  prob DOUBLE,
+      |  INDEX idx_name (name),
+      |  INDEX idx_total (total),
+      |  INDEX idx_last10years (last10years),
+      |  INDEX idx_syllables (syllables),
+      |  INDEX idx_lastYear (lastYear),
+      |  INDEX idx_ratingM (ratingM),
+      |  INDEX idx_ratingML (ratingML),
+      |  INDEX idx_clashProb (clashProb),
+      |  INDEX idx_prob (prob)
+      |);
+      |""".stripMargin
+   }
+
+    doctype("html")(
+      html(
+      head(
+        link(rel := "stylesheet", href := bootstrap),
+        script(src := "/static/app.js")
+      ),
+      body(
+        h1("?"),
+        
+      )
+    )
+    )
+  }
 
   @cask.get("/")
   def hello() = doctype("html")(
@@ -70,10 +117,13 @@ object MinimalApplication extends cask.MainRoutes {
     else {
       import ctx._
       val msgval = Message(name, msg)
-      val a = quote{
-        query[Message].insert(_.name -> lift(msgval.name), _.msg -> lift(msgval.msg)) 
+      val a = quote {
+        query[Message].insert(
+          _.name -> lift(msgval.name),
+          _.msg -> lift(msgval.msg)
+        )
       }
-      //ctx.run(query[Message].insert(lift(msgval)))
+      // ctx.run(query[Message].insert(lift(msgval)))
       ctx.run(a)
       for (conn <- openConnections)
         conn.send(cask.Ws.Text(messageList().render))
