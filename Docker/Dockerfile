@@ -1,5 +1,5 @@
-FROM openjdk:21-jdk-alpine
+FROM eclipse-temurin
 WORKDIR /app
 COPY . /app
-RUN ./mill -i app.assembly
-ENTRYPOINT ["java", "-jar", "out/app/assembly/dest/out.jar"]
+RUN ./mill -i namefinder.assembly
+ENTRYPOINT ["java", "-jar", "out/namefinder/assembly/dest/out.jar"]
