@@ -9,5 +9,6 @@ case class NameStats(
     ratingM: Int,
     ratingML: Int,
     clashProb: Double,
-    prob: Double
+    prob: Double,
+    considered: Boolean
 )

@@ -17,7 +17,7 @@ object LoadCSV {
       val last10years = femname.filter(_.yearOfBirth > 2010).map(_.value).sum
       val lastYear = femname.filter(_.yearOfBirth == 2022).map(_.value).sum
       val syllables = countSyllables(name)
-      NameStats(name, total, last10years, syllables, lastYear, 0, 0, 0.0, 0.0)
+      NameStats(name, total, last10years, syllables, lastYear, 0, 0, 0.0, 0.0, false)
     }
         }.toVector
 
@@ -32,7 +32,19 @@ object LoadCSV {
          nameStats.copy( prob = prob, clashProb = 1.0-(scala.math.pow(1.0-prob,30 ) ))
         }
     )
-    withstats
+    withstats.map{
+      p => 
+        if (
+          p.syllables <= 2 &&
+          p.name.length() < 8 &&
+          p.name.forall(ch => ch.isLetter && ch <= 127) &&
+          !p.name.toLowerCase().contains("t") &&
+          p.clashProb < 0.02
+          )
+          p.copy(considered = true)
+        else
+          p
+    }
   }
 
   def csvToClass(reader: CSVReader): List[FemaleName] = {
