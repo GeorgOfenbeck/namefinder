@@ -363,4 +363,8 @@ CREATE TABLE IF NOT EXISTS namestats (
     )
   }
   initialize()
+
+  override def port: Int = 80
+  override def host: String = "0.0.0.0"
 }
+
