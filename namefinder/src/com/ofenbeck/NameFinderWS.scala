@@ -14,27 +14,56 @@ object NameFinderWS extends cask.MainRoutes {
   mysqlDataSource.setDatabaseName("nameit")
   val hikariConfig = new HikariConfig()
   hikariConfig.setDataSource(mysqlDataSource)
-  val ctx = new io.getquill.MysqlJdbcContext(io.getquill.LowerCase, new HikariDataSource(hikariConfig))
-
-
+  val ctx = new io.getquill.MysqlJdbcContext(
+    io.getquill.LowerCase,
+    new HikariDataSource(hikariConfig)
+  )
 
   def messages() = {
     import io.getquill._
     import ctx._
-    val allnames= ctx.run(query[NameStats].map(m => NameStats(name = m.name, total = m.total, last10years = m.last10years, syllables = m.syllables, lastYear = m.lastYear, ratingM = m.ratingM, ratingML = m.ratingML, clashProb = m.clashProb, prob = m.prob, considered = m.considered))) 
-    allnames 
+    val allnames = ctx.run(
+      query[NameStats].map(m =>
+        NameStats(
+          name = m.name,
+          total = m.total,
+          last10years = m.last10years,
+          syllables = m.syllables,
+          lastYear = m.lastYear,
+          ratingM = m.ratingM,
+          ratingML = m.ratingML,
+          clashProb = m.clashProb,
+          prob = m.prob,
+          considered = m.considered
+        )
+      )
+    )
+    allnames
   }
   def nextMuchkinName(): (String, Int) = {
     import io.getquill._
     import ctx._
-    val name = ctx.run(query[NameStats].filter(_.ratingM == 0).filter(_.considered == true).sortBy(_.ratingML)(io.getquill.Ord.desc[Int]).take(1))
+    val name = ctx.run(
+      query[NameStats]
+        .filter(_.ratingM == 0)
+        .filter(_.considered == true)
+        .filter(n => n.ratingML > 50 || n.ratingML == 0)
+        .take(1)
+    )
     (name(0).name, name(0).ratingM)
   }
 
-    def nextMuchkinLordName(): (String, Int) = {
+  def nextMuchkinLordName(): (String, Int) = {
     import io.getquill._
     import ctx._
-    val name = ctx.run(query[NameStats].filter(_.ratingML == 0).filter(_.considered == true).sortBy(_.ratingM)(io.getquill.Ord.desc[Int]).take(1))
+    val name = ctx.run(
+      query[NameStats]
+        .filter(_.ratingML == 0)
+        .filter(_.considered == true)
+        //.sortBy(_.ratingM)(io.getquill.Ord.desc[Int])
+        .filter(n => n.ratingM > 50 || n.ratingM == 0)
+        .take(1)
+    )
     (name(0).name, name(0).ratingML)
   }
   var openConnections = Set.empty[cask.WsChannelActor]
@@ -43,7 +72,6 @@ object NameFinderWS extends cask.MainRoutes {
 
   @cask.staticResources("/static")
   def staticResourceRoutes() = "static"
-
 
   @cask.get("/munchkinLord")
   def munchkinLord() = {
@@ -72,7 +100,7 @@ object NameFinderWS extends cask.MainRoutes {
                 max := 100,
                 value := "50",
                 id := "nameRatingInput",
-                `class` := "slider", 
+                `class` := "slider"
               ),
               input(`type` := "submit")
             )
@@ -109,7 +137,7 @@ object NameFinderWS extends cask.MainRoutes {
                 max := 100,
                 value := "50",
                 id := "nameRatingInput",
-                `class` := "slider", 
+                `class` := "slider"
               ),
               input(`type` := "submit")
             )
@@ -143,7 +171,12 @@ object NameFinderWS extends cask.MainRoutes {
           val (nName, nexthRating) = nextMuchkinName()
           for (conn <- openConnections)
             conn.send(cask.Ws.Text(messageList().render))
-          ujson.Obj("success" -> true, "err" -> "", "nameRender" -> nextName(nName).render, "name" -> nName)
+          ujson.Obj(
+            "success" -> true,
+            "err" -> "",
+            "nameRender" -> nextName(nName).render,
+            "name" -> nName
+          )
         }
       }
     }
@@ -173,7 +206,12 @@ object NameFinderWS extends cask.MainRoutes {
           val (nName, nexthRating) = nextMuchkinLordName()
           for (conn <- openConnections)
             conn.send(cask.Ws.Text(messageList().render))
-          ujson.Obj("success" -> true, "err" -> "", "nameRender" -> nextName(nName).render, "name" -> nName)
+          ujson.Obj(
+            "success" -> true,
+            "err" -> "",
+            "nameRender" -> nextName(nName).render,
+            "name" -> nName
+          )
         }
       }
     }
@@ -213,35 +251,67 @@ object NameFinderWS extends cask.MainRoutes {
     p(b(name), " Ofenbeck")
   )
 
-  def messageList() = { 
-    
+  def messageList() = {
+
     val allnames = messages()
-    
-    val munchRank: Map[String, Int] = allnames.sortBy(_.ratingM)(Ordering[Int].reverse).zipWithIndex.map{
-      case (nameStats, index) =>
+
+    val munchRank: Map[String, Int] = allnames
+      .sortBy(_.ratingM)(Ordering[Int].reverse)
+      .zipWithIndex
+      .map { case (nameStats, index) =>
         nameStats.name -> index
-    }.toMap
-    
-    val munchLordRank = allnames.sortBy(_.ratingML)(Ordering[Int].reverse).zipWithIndex.map{
-      case (nameStats, index) =>
+      }
+      .toMap
+
+    val munchLordRank = allnames
+      .sortBy(_.ratingML)(Ordering[Int].reverse)
+      .zipWithIndex
+      .map { case (nameStats, index) =>
         nameStats.name -> index
-    }.toMap
-    
-    val xx = allnames.map( x =>{
+      }
+      .toMap
+
+    val xx = allnames.map(x => {
       val mRank = munchRank.getOrElse(x.name, -1)
       val mlRank = munchLordRank.getOrElse(x.name, -1)
       (x, mRank + mlRank)
     })
-    val yy = xx.sortBy(_._2).map{
-      case (nameStats, rank) =>
-        p(b(nameStats.name), " ", nameStats.lastYear, ", ", nameStats.ratingM, ", ", nameStats.ratingML, ", ", rank)
-    }
-    
-    frag(
-      for (name <- yy) yield name
-    )
+    val yy = xx.sortBy(_._2).map { case (nameStats, rank) =>
+      if (nameStats.considered == false)
+        tr(backgroundColor := "#D6EEEE")(
+          td(nameStats.name),
+          td(nameStats.lastYear),
+          td(nameStats.ratingM),
+          td(nameStats.ratingML),
+          td(rank)
+        )
+      else
+        tr(
+          td(nameStats.name),
+          td(nameStats.lastYear),
+          td(nameStats.ratingM),
+          td(nameStats.ratingML),
+          td(rank)
+        )
     }
 
+    frag(
+      table(
+        thead(
+          tr(
+            th("Name"),
+            th("Last Year"),
+            th("Munchkin"),
+            th("MunchkinLord"),
+            th("Rank")
+          )
+        ),
+        tbody(
+          for (name <- yy) yield name
+        )
+      )
+    )
+  }
 
   @cask.postJson("/")
   def postChatMsg(name: String, msg: String) = {
@@ -274,7 +344,37 @@ object NameFinderWS extends cask.MainRoutes {
     cask.WsActor { case cask.Ws.Close(_, _) => openConnections -= connection }
   }
 
-  @cask.get("/init")
+  @cask.get("/update")
+  def update() = {
+    val all: Vector[NameStats] = LoadCSV()
+    import io.getquill._
+    import ctx._
+    val insertAll = quote {
+      liftQuery(all).foreach(e =>
+        query[NameStats]
+          .filter(_.name == e.name)
+          .filter(_.total == e.total)
+          .filter(_.last10years == e.last10years)
+          .filter(_.syllables == e.syllables)
+          .filter(_.lastYear == e.lastYear)
+          .update(_.considered -> e.considered)
+      )
+    }
+    ctx.run(insertAll)
+    doctype("html")(
+      html(
+        head(
+          link(rel := "stylesheet", href := bootstrap),
+          script(src := "/static/app.js")
+        ),
+        body(
+          h1("!")
+        )
+      )
+    )
+  }
+
+  @cask.get("/initDontUse")
   def init() = {
     val all: Vector[NameStats] = LoadCSV()
     import io.getquill._
@@ -292,7 +392,7 @@ object NameFinderWS extends cask.MainRoutes {
             e.ratingML,
             e.clashProb,
             e.prob,
-            e.considered,
+            e.considered
           )
         )
       )
@@ -324,7 +424,7 @@ object NameFinderWS extends cask.MainRoutes {
       |);
       |""".stripMargin
 
-/* 
+    /*
 DROP TABLE IF EXISTS namestats;
 CREATE TABLE IF NOT EXISTS namestats (
   name VARCHAR(255),
@@ -348,7 +448,7 @@ CREATE TABLE IF NOT EXISTS namestats (
   INDEX idx_prob (prob),
   INDEX idx_considered (considered)
   );
- */
+     */
 
     doctype("html")(
       html(
@@ -367,4 +467,3 @@ CREATE TABLE IF NOT EXISTS namestats (
   override def port: Int = 80
   override def host: String = "0.0.0.0"
 }
-

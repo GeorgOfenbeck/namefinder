@@ -38,7 +38,7 @@ object LoadCSV {
           p.syllables <= 2 &&
           p.name.length() < 8 &&
           p.name.forall(ch => ch.isLetter && ch <= 127) &&
-          !p.name.toLowerCase().contains("t") &&
+          //!p.name.toLowerCase().contains("t") &&
           p.clashProb < 0.02
           )
           p.copy(considered = true)
